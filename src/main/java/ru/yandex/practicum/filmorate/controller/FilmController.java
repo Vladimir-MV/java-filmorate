@@ -5,6 +5,7 @@
     import org.springframework.http.HttpStatus;
     import org.springframework.http.ResponseEntity;
     import org.springframework.web.bind.annotation.*;
+    import org.springframework.web.client.HttpServerErrorException;
     import ru.yandex.practicum.filmorate.exception.ValidationException;
     import ru.yandex.practicum.filmorate.model.Film;
 
@@ -61,26 +62,33 @@
             if (film.getReleaseDate() == null || film.getReleaseDate().isBefore
                     (LocalDate.of(1895, 12,28)))
                 throw new ValidationException("Дата релиза, не может быть раньше 28 декабря 1895 года! ");
-            if (film.getDuration() == null || film.getDuration().isNegative())
+            if (film.getDuration() == null || film.getDuration() <= 0)
                 throw new ValidationException("Продолжительность фильма указана не верно!");
-            if (film.getId() == null) getIdFilm(film);
+            if (film.getId() == null) {
+                getIdFilm(film);
+            }
+            else if (film.getId() <= 0)  {
+                throw new ValidationException ("id не может быть отрицательным!");
+            }
             return true;
         }
+
 
         @ExceptionHandler(ValidationException.class)
         public ResponseEntity<Response> handleException(ValidationException e) {
             log.info("Пользователь не прошел валидацию, ValidationException! {}", e.getMessage());
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         @ExceptionHandler(NullPointerException.class)
         public ResponseEntity<Response> handleException2(NullPointerException e) {
             log.info("Пользователь не прошел валидацию, NullPointerException! {}", e.getMessage());
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
+
         @ExceptionHandler(RuntimeException.class)
         public ResponseEntity<Response> handleException3(RuntimeException e) {
             log.info("Пользователь не прошел валидацию, RuntimeException! {}", e.getMessage());
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
     }

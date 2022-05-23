@@ -14,7 +14,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -46,7 +45,7 @@ class FilmorateApplicationTests {
 		film.setName("nisi eiusmod");
 		film.setDescription("adipisicing");
 		film.setReleaseDate(LocalDate.of(1967,03, 25));
-		film.setDuration(Duration.ofMinutes(100));
+		film.setDuration(100);
 		var response = this.restTemplate.postForEntity(url + "/films",
 				film, Film.class);
 		Assertions.assertEquals(response.getStatusCode(), HttpStatus.OK);
@@ -58,7 +57,7 @@ class FilmorateApplicationTests {
 		film.setName("");
 		film.setDescription("Description");
 		film.setReleaseDate(LocalDate.of(1900,03, 25));
-		film.setDuration(Duration.ofMinutes(200));
+		film.setDuration(200);
 		var response = this.restTemplate.postForEntity(url + "/films", film, Film.class);
 		Assertions.assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
 	}
@@ -69,7 +68,7 @@ class FilmorateApplicationTests {
 		film.setName("Cinema");
 		film.setDescription("");
 		film.setReleaseDate(LocalDate.of(1905,03, 25));
-		film.setDuration(Duration.ofMinutes(150));
+		film.setDuration(150);
 		var response = this.restTemplate.postForEntity(url + "/films", film, Film.class);
 		Assertions.assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
 	}
@@ -80,9 +79,9 @@ class FilmorateApplicationTests {
 		film.setName("Name");
 		film.setDescription("Description");
 		film.setReleaseDate(LocalDate.of(1890,03, 25));
-		film.setDuration(Duration.ofMinutes(200));
+		film.setDuration(200);
 		var response = this.restTemplate.postForEntity(url + "/films", film, Film.class);
-		Assertions.assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+		Assertions.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@Test
@@ -91,9 +90,9 @@ class FilmorateApplicationTests {
 		film.setName("Name");
 		film.setDescription("Description");
 		film.setReleaseDate(LocalDate.of(1980,03, 25));
-		film.setDuration(Duration.ofMinutes(-200));
+		film.setDuration(-200);
 		var response = this.restTemplate.postForEntity(url + "/films", film, Film.class);
-		Assertions.assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+		Assertions.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 	@Test
@@ -103,7 +102,7 @@ class FilmorateApplicationTests {
 		film.setName("nisi eiusmod");
 		film.setDescription("adipisicing");
 		film.setReleaseDate(LocalDate.of(1967,03, 25));
-		film.setDuration(Duration.ofMinutes(100));
+		film.setDuration(100);
 		String body = mapper.writeValueAsString(film);
 		this.mockMvc.perform(put("/films").content(body).contentType(MediaType.APPLICATION_JSON))
 				.andExpect(status().isOk());
@@ -132,7 +131,7 @@ class FilmorateApplicationTests {
 		user.setEmail("mail@mail.ru");
 		user.setBirthday(LocalDate.parse("1980-08-20"));
 		var response = this.restTemplate.postForEntity(url + "/users", user, User.class);
-		Assertions.assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+		Assertions.assertEquals(response.getStatusCode(), HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 	@Test
 	void userFailNameTest() throws Exception {
@@ -142,7 +141,7 @@ class FilmorateApplicationTests {
 		user.setEmail("mail@mail.ru");
 		user.setBirthday(LocalDate.parse("1946-08-20"));
 		var response = this.restTemplate.postForEntity(url + "/users", user, User.class);
-		Assertions.assertEquals(response.getStatusCode(), HttpStatus.BAD_REQUEST);
+		Assertions.assertEquals(response.getStatusCode(), HttpStatus.OK);
 	}
 	@Test
 	void userFailEmailTest() throws Exception {

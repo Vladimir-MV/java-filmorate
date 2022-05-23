@@ -67,26 +67,30 @@
             }
             if (user.getName().isBlank()) {
                 user.setName(user.getLogin());
-                throw new ValidationException("Имя не указано!");
             }
-            if (user.getId() == null) getIdUser(user);
+            if (user.getId() == null) {
+                getIdUser(user);
+            }
+            else if (user.getId() <= 0)  {
+                throw new RuntimeException ("id не может быть отрицательным!");
+            }
             return true;
         }
 
         @ExceptionHandler(ValidationException.class)
         public ResponseEntity<Response> handleException(ValidationException e) {
             log.info("Пользователь не прошел валидацию! {}", e.getMessage());
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         @ExceptionHandler(NullPointerException.class)
         public ResponseEntity<Response> handleException2(NullPointerException e) {
             log.info("Пользователь не прошел валидацию! {}", e.getMessage());
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
         @ExceptionHandler(RuntimeException.class)
         public ResponseEntity<Response> handleException3(RuntimeException e) {
             log.info("Пользователь не прошел валидацию! {}", e.getMessage());
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
     }

@@ -5,7 +5,11 @@
     import ru.yandex.practicum.filmorate.exception.ValidationException;
     import ru.yandex.practicum.filmorate.model.User;
 
-    import java.time.LocalDate;
+    import org.apache.catalina.connector.Response;
+    import org.springframework.http.HttpStatus;
+    import org.springframework.http.ResponseEntity;
+
+    import javax.validation.Valid;
     import java.util.ArrayList;
     import java.util.HashMap;
     import java.util.List;
@@ -13,14 +17,17 @@
     @RestController
     @RequestMapping("/users")
     @Slf4j
-    public class UserController {
+    public class UserController extends AbstractController<User> {
         private Long id = 0l;
+        private String exceptionUser = "";
         private final List<User> users = new ArrayList<>();
         private HashMap<Long, User> usersBase = new HashMap<>();
 
+
         @GetMapping()
-        private List<User> findAll() {
-            for (User user: usersBase.values()){
+        @Override
+        protected List<User> findAll() {
+            for (User user : usersBase.values()) {
                 users.add(user);
             }
             log.info("Текущее количество пользователей в списке: {}", usersBase.size());
@@ -28,21 +35,21 @@
         }
 
         @PostMapping()
-        private User create(@RequestBody User user) {
+        @Override
+        protected User create(@Valid @RequestBody User user) throws ValidationException {
             if (validationUser(user)) {
                 log.info("Добавлен пользователь: {}", user.getName());
                 usersBase.put(user.getId(), user);
-                System.out.println(usersBase);
             }
             return user;
         }
 
         @PutMapping()
-        private User putUser(@RequestBody User user) {
+        @Override
+        protected User put(@Valid @RequestBody User user) throws ValidationException {
             if (validationUser(user)) {
                 log.info("Данные пользователя: {} изменены или добавлены.", user.getName());
                 usersBase.put(user.getId(), user);
-                System.out.println(usersBase);
             }
             return user;
         }
@@ -52,38 +59,34 @@
             user.setId(id);
         }
 
-        private boolean validationUser (User user) {
-            String exceptionUser = "";
-            try {
-                if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@"))
-                    exceptionUser = "Электронная почта указана не верно! ";
-
-                if (user.getLogin() == null || user.getLogin().isBlank() || user.getLogin().contains(" "))
-                    exceptionUser = exceptionUser + "Логин не может быть пустым и содержать символ пробела! ";
-
-                if (user.getBirthday() == null || user.getBirthday().isAfter(LocalDate.now()))
-                    exceptionUser = exceptionUser + "Дата рождения не может быть в будущем! ";
-
-                if (user.getName() == null || user.getName().isBlank()) {
-                    if (!user.getLogin().isBlank() && !user.getLogin().contains(" ")) {
-                        exceptionUser = exceptionUser + "Имя не указано!";
-                        user.setName(user.getLogin());
-                        if (user.getId() == null) getIdUser(user);
-                        usersBase.put(user.getId(), user);
-                        System.out.println(usersBase);
-                    }
+        private boolean validationUser(User user) throws ValidationException {
+            for (char ch: user.getLogin().toCharArray()) {
+                if (ch == ' ') {
+                    throw new ValidationException("Логин не может содержать символ пробела!");
                 }
-                if (exceptionUser.isEmpty()) {
-                    if (user.getId() == null) getIdUser(user);
-                    return true;
-                } else {
-                    throw new ValidationException(exceptionUser);
-                }
-            } catch (ValidationException e) {
-                log.info("Пользователь не прошел валидацию! {}", e.getMessage());
-                throw new RuntimeException(e.getMessage());
             }
+            if (user.getName().isBlank()) {
+                user.setName(user.getLogin());
+                throw new ValidationException("Имя не указано!");
+            }
+            if (user.getId() == null) getIdUser(user);
+            return true;
+        }
 
+        @ExceptionHandler(ValidationException.class)
+        public ResponseEntity<Response> handleException(ValidationException e) {
+            log.info("Пользователь не прошел валидацию! {}", e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        @ExceptionHandler(NullPointerException.class)
+        public ResponseEntity<Response> handleException2(NullPointerException e) {
+            log.info("Пользователь не прошел валидацию! {}", e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        @ExceptionHandler(RuntimeException.class)
+        public ResponseEntity<Response> handleException3(RuntimeException e) {
+            log.info("Пользователь не прошел валидацию! {}", e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
     }

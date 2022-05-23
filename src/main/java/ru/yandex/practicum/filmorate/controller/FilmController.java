@@ -1,10 +1,14 @@
     package ru.yandex.practicum.filmorate.controller;
 
     import lombok.extern.slf4j.Slf4j;
+    import org.apache.catalina.connector.Response;
+    import org.springframework.http.HttpStatus;
+    import org.springframework.http.ResponseEntity;
     import org.springframework.web.bind.annotation.*;
     import ru.yandex.practicum.filmorate.exception.ValidationException;
     import ru.yandex.practicum.filmorate.model.Film;
 
+    import javax.validation.Valid;
     import java.time.LocalDate;
     import java.util.ArrayList;
     import java.util.HashMap;
@@ -13,13 +17,15 @@
     @RestController
     @RequestMapping("/films")
     @Slf4j
-    public class FilmController {
-        private Long id = 0l;
+    public class FilmController extends AbstractController<Film> {
+        private Long id = 0L;
+        private String exceptionFilm = "";
         private final List<Film> films = new ArrayList<>();
         private HashMap<Long, Film> filmsBase = new HashMap<>();
 
         @GetMapping()
-        private List<Film> findAll() {
+        @Override
+        protected List<Film> findAll() {
             for (Film film: filmsBase.values()){
                 films.add(film);
             }
@@ -28,52 +34,53 @@
         }
 
         @PostMapping()
-        private Film create(@RequestBody Film film) {
+        @Override
+        protected Film create(@Valid @RequestBody Film film) throws ValidationException {
             if (validationFilm(film)) {
                 log.info("Добавлен фильм: {}", film.getName());
                 filmsBase.put(film.getId(), film);
-                System.out.println(filmsBase);
             }
             return film;
         }
+
         @PutMapping()
-        private Film putFilm(@RequestBody Film film) {
+        @Override
+        protected Film put(@Valid @RequestBody Film film) throws ValidationException {
             if (validationFilm(film)) {
                 log.info("Данные фильма: {} изменены или добавлены.", film.getName());
                 filmsBase.put(film.getId(), film);
-                System.out.println(filmsBase);
             }
             return film;
         }
+
         private void getIdFilm(Film film) {
             id = id + 1;
             film.setId(id);
         }
-        private boolean validationFilm (Film film) {
-            String exceptionFilm = "";
-            try {
-                if (film.getName() == null || film.getName().isBlank()) exceptionFilm = "Название фильма не указано! ";
+        private boolean validationFilm(Film film) throws ValidationException {
+            if (film.getReleaseDate() == null || film.getReleaseDate().isBefore
+                    (LocalDate.of(1895, 12,28)))
+                throw new ValidationException("Дата релиза, не может быть раньше 28 декабря 1895 года! ");
+            if (film.getDuration() == null || film.getDuration().isNegative())
+                throw new ValidationException("Продолжительность фильма указана не верно!");
+            if (film.getId() == null) getIdFilm(film);
+            return true;
+        }
 
-                if (film.getDescription() == null || film.getDescription().isBlank() ||
-                        (film.getDescription().length() > 200))
-                    exceptionFilm = exceptionFilm + "Описания нет или длина больше 200 символов! ";
-
-                if (film.getReleaseDate() == null || film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28)))
-                    exceptionFilm = exceptionFilm + "Дата релиза, не может быть раньше 28 декабря 1895 года! ";
-
-                if (film.getDuration() == null || film.getDuration().isNegative() || film.getDuration().isZero())
-                    exceptionFilm = exceptionFilm + "Продолжительность фильма должна быть положительной!";
-
-                if (exceptionFilm.isBlank()) {
-                    if (film.getId() == null) getIdFilm(film);
-                    return true;
-                } else {
-                    throw new ValidationException(exceptionFilm);
-                }
-            } catch (ValidationException e) {
-                log.info("Фильм не прошел валидацию! {}", e.getMessage());
-                throw new RuntimeException(e.getMessage());
-            }
+        @ExceptionHandler(ValidationException.class)
+        public ResponseEntity<Response> handleException(ValidationException e) {
+            log.info("Пользователь не прошел валидацию, ValidationException! {}", e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        @ExceptionHandler(NullPointerException.class)
+        public ResponseEntity<Response> handleException2(NullPointerException e) {
+            log.info("Пользователь не прошел валидацию, NullPointerException! {}", e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        @ExceptionHandler(RuntimeException.class)
+        public ResponseEntity<Response> handleException3(RuntimeException e) {
+            log.info("Пользователь не прошел валидацию, RuntimeException! {}", e.getMessage());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
     }

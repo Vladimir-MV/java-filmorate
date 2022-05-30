@@ -1,96 +1,67 @@
     package ru.yandex.practicum.filmorate.controller;
-
-    import lombok.extern.slf4j.Slf4j;
+    import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.web.bind.annotation.*;
     import ru.yandex.practicum.filmorate.exception.ValidationException;
     import ru.yandex.practicum.filmorate.model.User;
-
-    import org.apache.catalina.connector.Response;
-    import org.springframework.http.HttpStatus;
-    import org.springframework.http.ResponseEntity;
+    import ru.yandex.practicum.filmorate.service.UserService;
 
     import javax.validation.Valid;
-    import java.util.ArrayList;
-    import java.util.HashMap;
     import java.util.List;
+    import java.util.Optional;
 
     @RestController
     @RequestMapping("/users")
-    @Slf4j
     public class UserController extends AbstractController<User> {
-        private Long id = 0l;
-        private String exceptionUser = "";
-        private final List<User> users = new ArrayList<>();
-        private HashMap<Long, User> usersBase = new HashMap<>();
+        private UserService userService;
 
+        @Autowired
+        public UserController(UserService userService) {
+            this.userService = userService;
+        }
 
         @GetMapping()
         @Override
         protected List<User> findAll() {
-            for (User user : usersBase.values()) {
-                users.add(user);
-            }
-            log.info("Текущее количество пользователей в списке: {}", usersBase.size());
-            return users;
+            return userService.findAllUserService();
+        }
+
+        @GetMapping("/{id}")
+        protected User findUserById(@PathVariable Optional<Long> id) {
+            return userService.findUserByIdService(id);
+        }
+
+        @GetMapping("/{id}/friends")
+        protected List<User> getUserFriendsList(@PathVariable Optional<Long> id) {
+            return userService.getUserFriendsListService(id);
+        }
+
+        @GetMapping("/{id}/friends/common/{otherId}")
+        protected List<User> getFriendsCommonList(@PathVariable Optional<Long> id,
+                                                  @PathVariable Optional<Long> otherId) {
+            return userService.getFriendsCommonListService(id, otherId);
+        }
+
+        @DeleteMapping("/{id}/friends/{friendId}")
+        protected User deleteUserFriends(@PathVariable Optional<Long> id,
+                                         @PathVariable Optional<Long> friendId) {
+            return userService.deleteUserFriendsService(id, friendId);
         }
 
         @PostMapping()
         @Override
         protected User create(@Valid @RequestBody User user) throws ValidationException {
-            if (validationUser(user)) {
-                log.info("Добавлен пользователь: {}", user.getName());
-                usersBase.put(user.getId(), user);
-            }
-            return user;
+            return userService.createUserService(user);
         }
 
         @PutMapping()
         @Override
         protected User put(@Valid @RequestBody User user) throws ValidationException {
-            if (validationUser(user)) {
-                log.info("Данные пользователя: {} изменены или добавлены.", user.getName());
-                usersBase.put(user.getId(), user);
-            }
-            return user;
+            return userService.putUserService(user);
         }
 
-        private void getIdUser(User user) {
-            id = id + 1;
-            user.setId(id);
+        @PutMapping("/{id}/friends/{friendId}")
+        protected User addUserFriends(@PathVariable Optional<Long> id,
+                                      @PathVariable Optional<Long> friendId) {
+            return userService.addUserFriendsService(id, friendId);
         }
-
-        private boolean validationUser(User user) throws ValidationException {
-            for (char ch: user.getLogin().toCharArray()) {
-                if (ch == ' ') {
-                    throw new ValidationException("Логин не может содержать символ пробела!");
-                }
-            }
-            if (user.getName().isBlank()) {
-                user.setName(user.getLogin());
-            }
-            if (user.getId() == null) {
-                getIdUser(user);
-            }
-            else if (user.getId() <= 0)  {
-                throw new RuntimeException ("id не может быть отрицательным!");
-            }
-            return true;
-        }
-
-        @ExceptionHandler(ValidationException.class)
-        public ResponseEntity<Response> handleException(ValidationException e) {
-            log.info("Пользователь не прошел валидацию! {}", e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        @ExceptionHandler(NullPointerException.class)
-        public ResponseEntity<Response> handleException2(NullPointerException e) {
-            log.info("Пользователь не прошел валидацию! {}", e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-        @ExceptionHandler(RuntimeException.class)
-        public ResponseEntity<Response> handleException3(RuntimeException e) {
-            log.info("Пользователь не прошел валидацию! {}", e.getMessage());
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
     }

@@ -5,7 +5,6 @@
     import ru.yandex.practicum.filmorate.exception.ValidationException;
     import ru.yandex.practicum.filmorate.model.User;
     import lombok.extern.slf4j.Slf4j;
-    import ru.yandex.practicum.filmorate.storage.user.InMemoryUserStorage;
     import ru.yandex.practicum.filmorate.storage.user.UserStorage;
     import java.util.*;
 
@@ -15,7 +14,7 @@
         private UserStorage userStorage;
 
         @Autowired
-        public UserService(InMemoryUserStorage userStorage) { // InMemoryFilmStorage filmStorage
+        public UserService(UserStorage userStorage) { // InMemoryFilmStorage filmStorage
             this.userStorage = userStorage;
         }
 

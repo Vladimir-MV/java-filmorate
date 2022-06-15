@@ -20,5 +20,6 @@
         private String description;
         private LocalDate releaseDate;
         private Integer duration;
-
+        private String genre;
+        private String ratingMPA;
     }

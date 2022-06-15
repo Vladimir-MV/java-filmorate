@@ -3,7 +3,9 @@
     import lombok.*;
     import javax.validation.constraints.*;
     import java.time.LocalDate;
+    import java.util.HashMap;
     import java.util.HashSet;
+    import java.util.Map;
     import java.util.Set;
 
     @Getter
@@ -11,6 +13,7 @@
     @NoArgsConstructor
     public class User {
         private Long id;
+        private Map<Long, String> confirmedFriends = new HashMap<>();
         private Set<Long> friends = new HashSet<>();
         @NotBlank
         @Email

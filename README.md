@@ -1,7 +1,7 @@
 # java-filmorate
 Template repository for Filmorate project.
 
-![Database schema](QuickDBD-Sprint 10.png)
+![Database schema](/QuickDBD-Sprint%2010.png)
 
 SELECT *
 FROM film AS f
